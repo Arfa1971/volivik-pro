@@ -1,4 +1,4 @@
-# BIC Quotation App
+# Volivik Pro
 
 Aplicación web para la gestión de productos y cotizaciones de BIC, con soporte para diferentes tipos de clientes (Custab y Partner).
 
