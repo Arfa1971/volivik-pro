@@ -44,29 +44,37 @@ export default function ProductDetails({ product, clientType, onClose }: Product
   };
 
   return (
-    <div className="relative bg-white p-6">
-      <div className="flex justify-between items-start mb-6">
-        <h2 className="text-xl font-semibold">{product.descripcion}</h2>
-        <button
-          onClick={onClose}
-          className="p-1 hover:bg-gray-100 rounded-full transition-colors duration-200"
-        >
-          <X className="h-5 w-5 text-gray-500" />
-        </button>
+    <div className="relative bg-white p-4 sm:p-6 max-w-2xl mx-auto">
+      {/* Header */}
+      <div className="sticky top-0 bg-white z-10 -mx-4 sm:mx-0 px-4 sm:px-0 pb-4 border-b">
+        <div className="flex justify-between items-center">
+          <h2 className="text-lg sm:text-xl font-semibold truncate">{product.descripcion}</h2>
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-gray-100 rounded-full transition-colors duration-200"
+            aria-label="Cerrar"
+          >
+            <X className="h-6 w-6 text-gray-500" />
+          </button>
+        </div>
+        <div className="mt-2 flex items-center space-x-2">
+          <span className="text-sm text-gray-500">Código: {product.codigo}</span>
+          {product.categoria && (
+            <span className="px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+              {product.categoria}
+            </span>
+          )}
+        </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-6">
-        {/* Columna 1: Información del producto */}
+      <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
+        {/* Información del producto */}
         <div className="bg-gray-50 p-4 rounded-lg">
-          <h3 className="text-sm font-medium text-gray-500 flex items-center gap-2 mb-4">
-            <Tag className="h-4 w-4" />
-            Información
+          <h3 className="text-sm font-medium text-gray-500 flex items-center gap-2 mb-3">
+            <Info className="h-4 w-4" />
+            Detalles del producto
           </h3>
-          <dl className="space-y-2">
-            <div>
-              <dt className="text-xs text-gray-500">Código</dt>
-              <dd className="text-sm font-medium text-gray-900">{product.codigo}</dd>
-            </div>
+          <div className="grid grid-cols-2 gap-4">
             <div>
               <dt className="text-xs text-gray-500">EAN</dt>
               <dd className="text-sm font-medium text-gray-900">{product.ean?.toString() || 'N/A'}</dd>
@@ -75,7 +83,7 @@ export default function ProductDetails({ product, clientType, onClose }: Product
               <dt className="text-xs text-gray-500">Familia</dt>
               <dd className="text-sm font-medium text-gray-900">{product.familia_producto}</dd>
             </div>
-          </dl>
+          </div>
         </div>
 
         {/* Columna 2: Información logística */}
@@ -145,17 +153,18 @@ export default function ProductDetails({ product, clientType, onClose }: Product
         </div>
       )}
 
-      {/* Cantidad y añadir al carrito */}
-      <div className="mt-6 pt-6 border-t border-gray-200">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
+      {/* Cantidad y añadir al carrito - Fijo en la parte inferior */}
+      <div className="sticky bottom-0 bg-white -mx-4 sm:mx-0 px-4 sm:px-0 pt-4 pb-4 sm:pb-0 mt-6 border-t border-gray-200">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 sm:justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
             <label htmlFor="quantity" className="text-sm font-medium text-gray-700">
               Cantidad:
             </label>
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center gap-2">
               <Button
                 variant="outline"
-                size="sm"
+                size="lg"
+                className="h-12 w-12 sm:h-10 sm:w-10"
                 onClick={() => handleQuantityChange(quantity - 1)}
                 disabled={quantity <= product.pedido_minimo}
               >
@@ -167,11 +176,12 @@ export default function ProductDetails({ product, clientType, onClose }: Product
                 min={product.pedido_minimo}
                 value={quantity}
                 onChange={(e) => handleQuantityChange(parseInt(e.target.value))}
-                className="w-20 p-2 border rounded text-center"
+                className="h-12 sm:h-10 w-24 p-2 border rounded-md text-center text-lg sm:text-base"
               />
               <Button
                 variant="outline"
-                size="sm"
+                size="lg"
+                className="h-12 w-12 sm:h-10 sm:w-10"
                 onClick={() => handleQuantityChange(quantity + 1)}
               >
                 +
@@ -181,12 +191,12 @@ export default function ProductDetails({ product, clientType, onClose }: Product
           <Button
             onClick={handleAddToCart}
             disabled={isAdding}
-            className={`bg-blue-600 hover:bg-blue-700 text-white px-6 ${isAdding ? 'opacity-75' : ''}`}
+            className={`h-12 sm:h-10 w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-6 ${isAdding ? 'opacity-75' : ''}`}
           >
             {isAdding ? (
               <Check className="h-5 w-5 mr-2" />
             ) : null}
-            Añadir al carrito ({(price * quantity).toFixed(2)}€)
+            Añadir ({(price * quantity).toFixed(2)}€)
           </Button>
         </div>
       </div>
