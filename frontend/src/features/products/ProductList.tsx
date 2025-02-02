@@ -5,8 +5,8 @@ import { Badge } from '@/components/ui/badge';
 import { Filter, Plus, Minus, ShoppingCart, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { Product } from '@/types/product';
-
 import { ProductImages } from './ProductImages';
+import ProductDetails from './ProductDetails';
 import {
   Dialog,
   DialogContent,
@@ -39,112 +39,63 @@ export function ProductList({ products, loading = false, error }: ProductListPro
   const itemsPerPage = 10;
   const { addToCart } = useCart();
 
-  console.log('ProductList render:', {
-    loading,
-    error,
-    productsCount: products.length,
-    searchTerm,
-    familySearchTerm,
-    clientType,
-    selectedFamily
-  });
-
-  // Manejar estados de carga y error
-  const renderLoadingOrError = () => {
-    if (loading) {
-      return (
-        <div className="flex items-center justify-center h-screen">
-          <div className="text-lg">Cargando productos...</div>
-        </div>
-      );
-    }
-
-    if (error) {
-      return (
-        <div className="flex items-center justify-center h-screen">
-          <div className="text-lg text-red-600">{error}</div>
-        </div>
-      );
-    }
-
-    if (!products || products.length === 0) {
-      return (
-        <div className="flex items-center justify-center h-screen">
-          <div className="text-lg">No se encontraron productos</div>
-        </div>
-      );
-    }
-
-    return null;
-  };
-
-  const loadingOrError = renderLoadingOrError();
-  if (loadingOrError) return loadingOrError;
-
-  // Obtener todas las familias únicas y ordenarlas
-  const families = Array.from(new Set(products.map(p => p.familia_producto)))
-    .filter(family => family && family.trim() !== '') // Eliminar familias vacías
-    .sort((a, b) => a.localeCompare(b)); // Ordenar alfabéticamente
-
-  // Filtrar familias por término de búsqueda
-  const filteredFamilies = familySearchTerm
-    ? families.filter(family =>
-        family.toLowerCase().includes(familySearchTerm.toLowerCase())
-      )
-    : families;
-
-  console.log('Familias disponibles:', {
-    todas: families,
-    filtradas: filteredFamilies,
-    busqueda: familySearchTerm,
-    seleccionada: selectedFamily
-  });
-
-  const handleQuantityChange = (productId: string, value: number) => {
-    setQuantities(prev => ({
-      ...prev,
-      [productId]: Math.max(1, value)
-    }));
-  };
-
-  const filteredProducts = products.filter(product => {
-    // Filtrar por término de búsqueda en código o descripción
-    const matchesSearch = (
-      product.codigo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.descripcion.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-
-    // Si está seleccionado "Con Promoción Q", solo mostrar productos con promoción real
-    if (selectedFamily === '_all') {
-      const hasRealPromotion = clientType === 'custab' 
-        ? (product.neto_promo_custab !== null && product.descuento_promo_q > 0)
-        : (product.neto_promo_partner !== null && product.descuento_promo_q > 0);
-      return matchesSearch && hasRealPromotion;
-    }
-
-    // Si está seleccionado "Todos los productos"
-    if (selectedFamily === '_none') {
-      return matchesSearch;
-    }
-
-    // Para selecciones específicas de familia
-    const matchesFamily = product.familia_producto === selectedFamily;
-    return matchesSearch && matchesFamily;
-  });
-
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = filteredProducts.slice(indexOfFirstItem, indexOfLastItem);
-
+  // Función para formatear precios
   const formatPrice = (price: number | undefined | null): string => {
     if (typeof price !== 'number') return '0.00';
     return price.toFixed(2);
   };
 
+  // Función para formatear descuentos
   const formatDiscount = (discount: number | undefined | null): string => {
     if (typeof discount !== 'number' || discount === 0) return '';
     return `-${discount}%`;
   };
+
+  // Manejar cambios en la cantidad
+  const handleQuantityChange = (productId: string, value: number) => {
+    const product = products.find(p => p.id === productId);
+    if (!product) return;
+
+    const minQuantity = product.pedido_minimo;
+    const newQuantity = Math.max(minQuantity, value);
+
+    setQuantities(prev => ({
+      ...prev,
+      [productId]: newQuantity
+    }));
+  };
+
+  // Filtrar productos
+  const filteredProducts = products.filter(product => {
+    const matchesSearch = (
+      product.codigo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      product.descripcion.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    if (selectedFamily === '_all') {
+      const hasRealPromotion = clientType === 'custab'
+        ? (product.neto_promo_custab !== null && product.descuento_promo_q > 0)
+        : (product.neto_promo_partner !== null && product.descuento_promo_q > 0);
+      return matchesSearch && hasRealPromotion;
+    }
+
+    if (selectedFamily === '_none') {
+      return matchesSearch;
+    }
+
+    return matchesSearch && product.familia_producto === selectedFamily;
+  });
+
+  // Obtener familias únicas para el filtro
+  const uniqueFamilies = Array.from(new Set(products.map(p => p.familia_producto))).filter(Boolean).sort();
+  const filteredFamilies = familySearchTerm
+    ? uniqueFamilies.filter(f => f.toLowerCase().includes(familySearchTerm.toLowerCase()))
+    : uniqueFamilies;
+
+  // Paginación
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = filteredProducts.slice(indexOfFirstItem, indexOfLastItem);
 
   return (
     <div className="space-y-4">
@@ -201,101 +152,66 @@ export function ProductList({ products, loading = false, error }: ProductListPro
                 placeholder="Buscar por código o descripción..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 h-9 border-orange-200 focus-visible:ring-orange-400"
+                className="w-full border-orange-200 focus-visible:ring-orange-400"
               />
-              <svg
-                className="absolute left-3 top-2.5 h-4 w-4 text-orange-400"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                />
-              </svg>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="border rounded-lg overflow-hidden shadow-lg">
+      <div className="bg-white rounded-lg shadow-md border border-orange-100 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="bg-[#E49B0F] text-white font-medium">
-                <th className="px-6 py-3 text-left whitespace-nowrap text-sm uppercase tracking-wider">Ficha</th>
-                <th className="px-6 py-3 text-left text-sm uppercase tracking-wider">Producto</th>
-                <th className="px-6 py-3 text-left text-sm uppercase tracking-wider">Categoría</th>
-                <th className="px-6 py-3 text-right text-sm uppercase tracking-wider">Tarifa</th>
-                <th className="px-6 py-3 text-right text-sm uppercase tracking-wider">Base</th>
-                <th className="px-6 py-3 text-right text-sm uppercase tracking-wider">{clientType === 'custab' ? 'Custab' : 'Partner'}</th>
-                <th className="px-6 py-3 text-right text-sm uppercase tracking-wider">Neto {clientType === 'custab' ? 'Custab' : 'Partner'}</th>
-                <th className="px-6 py-3 text-right text-sm uppercase tracking-wider">Promo</th>
-                <th className="px-6 py-3 text-right text-sm uppercase tracking-wider">Neto Final</th>
-                <th className="px-6 py-3 text-center text-sm uppercase tracking-wider">Cantidad</th>
+              <tr className="border-b border-orange-100">
+                <th className="text-left p-4 bg-orange-50/50 font-medium text-orange-900">Código</th>
+                <th className="text-left p-4 bg-orange-50/50 font-medium text-orange-900">Descripción</th>
+                <th className="text-right p-4 bg-orange-50/50 font-medium text-orange-900">Precio</th>
+                <th className="text-center p-4 bg-orange-50/50 font-medium text-orange-900">Acciones</th>
               </tr>
             </thead>
             <tbody>
               {currentItems.map((product) => {
                 const quantity = quantities[product.id] || product.pedido_minimo;
-                const basePrice = product.precio_tarifa;
-                const baseDiscount = product.descuento_1;
-                const clientDiscount = clientType === 'custab' ? product.descuento_custab : product.descuento_partner;
-                const netPrice = clientType === 'custab' ? product.neto_custab : product.neto_partner;
-                const promoDiscount = product.descuento_promo_q;
-                const finalPrice = clientType === 'custab' ? 
-                  (product.neto_promo_custab || product.neto_custab) : 
-                  (product.neto_promo_partner || product.neto_partner);
+                const price = clientType === 'custab'
+                  ? (product.neto_promo_custab || product.neto_custab)
+                  : (product.neto_promo_partner || product.neto_partner);
 
                 return (
-                  <tr key={product.id} className="even:bg-[#FDF6E7] odd:bg-white border-b transition-colors hover:bg-gray-50">
-                    <td className="px-6 py-4">
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="h-10 w-10 p-0 rounded-lg hover:bg-orange-100"
+                  <tr key={product.id} className="border-b border-orange-100 hover:bg-orange-50/30">
+                    <td className="p-4">
+                      <button
                         onClick={() => setSelectedProduct(product)}
+                        className="text-orange-600 hover:text-orange-700 font-medium"
                       >
-                        <ProductImages 
-                          productCode={product.codigo}
-                          size="sm"
-                        />
-                      </Button>
+                        {product.codigo}
+                      </button>
                     </td>
-                    <td className="px-6 py-4">
-                      <div>
+                    <td className="p-4">
+                      <button
+                        onClick={() => setSelectedProduct(product)}
+                        className="text-left hover:text-orange-600"
+                      >
                         <div className="font-medium">{product.descripcion}</div>
-                        <div className="text-sm text-gray-500">{product.codigo} · Mín: {product.pedido_minimo} uds.</div>
-                      </div>
+                        <div className="text-sm text-gray-500 mt-1">
+                          {product.familia_producto}
+                          {product.categoria && (
+                            <Badge variant="outline" className="ml-2 border-orange-200">
+                              {product.categoria}
+                            </Badge>
+                          )}
+                        </div>
+                      </button>
                     </td>
-                    <td className="px-6 py-4">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${product.categoria === 'core' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'}`}>
-                        {product.categoria.toUpperCase()}
-                      </span>
+                    <td className="p-4 text-right">
+                      <div className="font-medium">{formatPrice(price)}€</div>
+                      {product.descuento_promo_q > 0 && (
+                        <div className="text-sm font-medium text-green-600 mt-1">
+                          {formatDiscount(product.descuento_promo_q)}
+                        </div>
+                      )}
                     </td>
-                    <td className="px-4 py-2 text-right whitespace-nowrap">
-                      {formatPrice(basePrice)}€
-                    </td>
-                    <td className="px-4 py-2 text-right text-pink-600">
-                      {formatDiscount(baseDiscount)}
-                    </td>
-                    <td className="px-4 py-2 text-right text-pink-600">
-                      {formatDiscount(clientDiscount)}
-                    </td>
-                    <td className="px-4 py-2 text-right whitespace-nowrap">
-                      {formatPrice(netPrice)}€
-                    </td>
-                    <td className="px-4 py-2 text-right text-green-600">
-                      {formatDiscount(promoDiscount)}
-                    </td>
-                    <td className="px-4 py-2 text-right font-medium whitespace-nowrap">
-                      {formatPrice(finalPrice)}€
-                    </td>
-                    <td className="px-6 py-4">
+                    <td className="p-4">
                       <div className="flex items-center justify-center gap-2">
                         <Button
                           variant="outline"
@@ -341,96 +257,13 @@ export function ProductList({ products, loading = false, error }: ProductListPro
       </div>
 
       <Dialog open={!!selectedProduct} onOpenChange={() => setSelectedProduct(null)}>
-        <DialogContent className="max-w-4xl">
-          <DialogDescription className="sr-only">
-            Detalles del producto {selectedProduct?.descripcion}
-          </DialogDescription>
-          <DialogHeader>
-            <DialogTitle className="text-xl font-semibold">
-              {selectedProduct?.descripcion}
-            </DialogTitle>
-          </DialogHeader>
-          
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0">
           {selectedProduct && (
-            <div className="space-y-6">
-              <div className="grid grid-cols-3 gap-6">
-                {/* Columna de imagen */}
-                <div className="col-span-1">
-                  <ProductImages 
-                    productCode={selectedProduct.codigo}
-                    size="lg"
-                  />
-                </div>
-
-                {/* Columna de información */}
-                <div className="col-span-2 grid grid-cols-2 gap-4">
-                  <div>
-                    <h3 className="font-medium mb-2">Información General</h3>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Código:</span>
-                        <span className="font-medium">{selectedProduct.codigo}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Familia:</span>
-                        <span className="font-medium">{selectedProduct.familia_producto || '-'}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Pedido Mínimo:</span>
-                        <span className="font-medium">{selectedProduct.pedido_minimo} uds.</span>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <h3 className="font-medium mb-2">Precios y Descuentos</h3>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Precio Tarifa:</span>
-                        <span className="font-medium">{formatPrice(selectedProduct.precio_tarifa)}€</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Descuento Base:</span>
-                        <span className="font-medium text-pink-600">{formatDiscount(selectedProduct.descuento_1)}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Descuento {clientType === 'custab' ? 'Custab' : 'Partner'}:</span>
-                        <span className="font-medium text-pink-600">
-                          {formatDiscount(clientType === 'custab' ? selectedProduct.descuento_custab : selectedProduct.descuento_partner)}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Promoción Q:</span>
-                        <span className="font-medium text-green-600">{formatDiscount(selectedProduct.descuento_promo_q)}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <h3 className="font-medium mb-2">Precios Finales</h3>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Neto {clientType === 'custab' ? 'Custab' : 'Partner'}:</span>
-                      <span className="font-medium">
-                        {formatPrice(clientType === 'custab' ? selectedProduct.neto_custab : selectedProduct.neto_partner)}€
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Neto Final:</span>
-                      <span className="font-medium">
-                        {formatPrice(clientType === 'custab' ? 
-                          (selectedProduct.neto_promo_custab || selectedProduct.neto_custab) : 
-                          (selectedProduct.neto_promo_partner || selectedProduct.neto_partner)
-                        )}€
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <ProductDetails
+              product={selectedProduct}
+              clientType={clientType}
+              onClose={() => setSelectedProduct(null)}
+            />
           )}
         </DialogContent>
       </Dialog>

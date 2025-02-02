@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { X, Package, Tag, Box, Info, Euro, Check } from 'lucide-react';
+import { X, Package, Tag, Box, Info, Euro, Check, Plus, Minus, ShoppingCart } from 'lucide-react';
 import { Product } from '@/types/product';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/context/CartContext';
 import { toast } from 'sonner';
+import { ProductImages } from './ProductImages';
 
 interface ProductDetailsProps {
   product: Product;
@@ -70,6 +71,11 @@ export default function ProductDetails({ product, clientType, onClose }: Product
       </div>
 
       <div className="mt-6 space-y-6">
+        {/* Imagen del producto */}
+        <div className="aspect-square w-full max-w-md mx-auto bg-white rounded-lg overflow-hidden">
+          <ProductImages code={product.codigo} />
+        </div>
+
         {/* Información del producto y logística */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="bg-orange-50/50 p-5 rounded-xl border border-orange-100">
@@ -171,7 +177,7 @@ export default function ProductDetails({ product, clientType, onClose }: Product
                 onClick={() => handleQuantityChange(quantity - 1)}
                 disabled={quantity <= product.pedido_minimo}
               >
-                -
+                <Minus className="h-5 w-5" />
               </Button>
               <input
                 type="number"
@@ -187,7 +193,7 @@ export default function ProductDetails({ product, clientType, onClose }: Product
                 className="h-14 w-14 border-orange-200 text-orange-600 hover:bg-orange-50 text-xl"
                 onClick={() => handleQuantityChange(quantity + 1)}
               >
-                +
+                <Plus className="h-5 w-5" />
               </Button>
             </div>
             <div className="text-right">
@@ -198,12 +204,10 @@ export default function ProductDetails({ product, clientType, onClose }: Product
           <Button
             onClick={handleAddToCart}
             disabled={isAdding}
-            className={`h-14 w-full bg-[#E49B0F] hover:bg-[#E49B0F]/90 text-white text-lg font-medium ${isAdding ? 'opacity-75' : ''}`}
+            className="h-14 w-full bg-[#E49B0F] hover:bg-[#E49B0F]/90 text-white text-lg font-medium flex items-center justify-center gap-2"
           >
-            {isAdding ? (
-              <Check className="h-5 w-5 mr-2" />
-            ) : null}
-            Añadir al carrito
+            <ShoppingCart className="h-5 w-5" />
+            {isAdding ? 'Añadiendo...' : 'Añadir al carrito'}
           </Button>
         </div>
       </div>
