@@ -44,127 +44,127 @@ export default function ProductDetails({ product, clientType, onClose }: Product
   };
 
   return (
-    <div className="relative bg-white p-4 sm:p-6 max-w-2xl mx-auto">
+    <div className="relative bg-white p-4 sm:p-6 max-w-2xl mx-auto overflow-y-auto max-h-[90vh]">
       {/* Header */}
-      <div className="sticky top-0 bg-white z-10 -mx-4 sm:mx-0 px-4 sm:px-0 pb-4 border-b">
-        <div className="flex justify-between items-center">
-          <h2 className="text-lg sm:text-xl font-semibold truncate">{product.descripcion}</h2>
+      <div className="sticky top-0 bg-white z-10 -mx-4 sm:mx-0 px-4 sm:px-0 pb-4 border-b border-orange-100">
+        <div className="flex justify-between items-start gap-4">
+          <div className="flex-1 min-w-0">
+            <h2 className="text-xl font-semibold text-orange-900 leading-tight">{product.descripcion}</h2>
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <span className="text-base font-medium text-orange-600">{product.codigo}</span>
+              {product.categoria && (
+                <span className="px-3 py-1 rounded-full text-sm font-medium bg-orange-50 text-orange-800 border border-orange-200">
+                  {product.categoria}
+                </span>
+              )}
+            </div>
+          </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors duration-200"
+            className="p-2 hover:bg-orange-50 rounded-full transition-colors duration-200"
             aria-label="Cerrar"
           >
-            <X className="h-6 w-6 text-gray-500" />
+            <X className="h-6 w-6 text-orange-500" />
           </button>
-        </div>
-        <div className="mt-2 flex items-center space-x-2">
-          <span className="text-sm text-gray-500">Código: {product.codigo}</span>
-          {product.categoria && (
-            <span className="px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-              {product.categoria}
-            </span>
-          )}
         </div>
       </div>
 
-      <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
-        {/* Información del producto */}
-        <div className="bg-gray-50 p-4 rounded-lg">
-          <h3 className="text-sm font-medium text-gray-500 flex items-center gap-2 mb-3">
-            <Info className="h-4 w-4" />
-            Detalles del producto
-          </h3>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <dt className="text-xs text-gray-500">EAN</dt>
-              <dd className="text-sm font-medium text-gray-900">{product.ean?.toString() || 'N/A'}</dd>
+      <div className="mt-6 space-y-4">
+        {/* Información del producto y logística */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+          <div className="bg-orange-50 p-4 rounded-lg border border-orange-100">
+            <h3 className="text-sm font-medium text-orange-800 flex items-center gap-2 mb-3">
+              <Info className="h-4 w-4" />
+              Detalles
+            </h3>
+            <div className="space-y-2">
+              <div>
+                <dt className="text-xs text-orange-600">EAN</dt>
+                <dd className="text-sm font-medium text-orange-900">{product.ean?.toString() || 'N/A'}</dd>
+              </div>
+              <div>
+                <dt className="text-xs text-orange-600">Familia</dt>
+                <dd className="text-sm font-medium text-orange-900">{product.familia_producto}</dd>
+              </div>
             </div>
-            <div>
-              <dt className="text-xs text-gray-500">Familia</dt>
-              <dd className="text-sm font-medium text-gray-900">{product.familia_producto}</dd>
+          </div>
+
+          <div className="bg-orange-50 p-4 rounded-lg border border-orange-100">
+            <h3 className="text-sm font-medium text-orange-800 flex items-center gap-2 mb-3">
+              <Box className="h-4 w-4" />
+              Logística
+            </h3>
+            <div className="space-y-2">
+              <div>
+                <dt className="text-xs text-orange-600">Unidades/caja</dt>
+                <dd className="text-sm font-medium text-orange-900">{product.unidades_por_caja}</dd>
+              </div>
+              <div>
+                <dt className="text-xs text-orange-600">Pedido mínimo</dt>
+                <dd className="text-sm font-medium text-orange-900">{product.pedido_minimo} uds</dd>
+              </div>
+            </div>
+          </div>
+
+          {/* Precios */}
+          <div className="col-span-2 sm:col-span-1 bg-orange-50 p-4 rounded-lg border border-orange-100">
+            <h3 className="text-sm font-medium text-orange-800 flex items-center gap-2 mb-3">
+              <Euro className="h-4 w-4" />
+              Precios
+            </h3>
+            <div className="grid grid-cols-2 sm:grid-cols-1 gap-3">
+              <div>
+                <dt className="text-xs text-orange-600">Tarifa base</dt>
+                <dd className="text-sm font-medium text-orange-900">{product.precio_tarifa}€</dd>
+              </div>
+              <div>
+                <dt className="text-xs text-orange-600">Descuento base</dt>
+                <dd className="text-sm font-medium text-green-600">{product.descuento_1}%</dd>
+              </div>
+              <div>
+                <dt className="text-xs text-orange-600">
+                  Dto. {clientType === 'custab' ? 'Custab' : 'Partner'}
+                </dt>
+                <dd className="text-sm font-medium text-green-600">
+                  {clientType === 'custab' ? product.descuento_custab : product.descuento_partner}%
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs text-orange-600">Precio neto</dt>
+                <dd className="text-base font-semibold text-[#E49B0F]">
+                  {(clientType === 'custab' ? product.neto_custab : product.neto_partner).toFixed(2)}€
+                </dd>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Columna 2: Información logística */}
-        <div className="bg-gray-50 p-4 rounded-lg">
-          <h3 className="text-sm font-medium text-gray-500 flex items-center gap-2 mb-4">
-            <Box className="h-4 w-4" />
-            Logística
-          </h3>
-          <dl className="space-y-2">
-            <div>
-              <dt className="text-xs text-gray-500">Unidades/caja</dt>
-              <dd className="text-sm font-medium text-gray-900">{product.unidades_por_caja}</dd>
-            </div>
-            <div>
-              <dt className="text-xs text-gray-500">Pedido mínimo</dt>
-              <dd className="text-sm font-medium text-gray-900">{product.pedido_minimo} unidades</dd>
-            </div>
-          </dl>
-        </div>
-
-        {/* Columna 3: Precios y descuentos */}
-        <div className="bg-gray-50 p-4 rounded-lg">
-          <h3 className="text-sm font-medium text-gray-500 flex items-center gap-2 mb-4">
-            <Euro className="h-4 w-4" />
-            Precios
-          </h3>
-          <dl className="space-y-2">
-            <div>
-              <dt className="text-xs text-gray-500">Tarifa base</dt>
-              <dd className="text-sm font-medium text-gray-900">{product.precio_tarifa}€</dd>
-            </div>
-            <div>
-              <dt className="text-xs text-gray-500">Descuento base</dt>
-              <dd className="text-sm font-medium text-purple-600">{product.descuento_1}%</dd>
-            </div>
-            <div>
-              <dt className="text-xs text-gray-500">
-                Descuento {clientType === 'custab' ? 'Custab' : 'Partner'}
-              </dt>
-              <dd className="text-sm font-medium text-purple-600">
-                {clientType === 'custab' ? product.descuento_custab : product.descuento_partner}%
-              </dd>
-            </div>
-            <div>
-              <dt className="text-xs text-gray-500">Precio neto por unidad</dt>
-              <dd className="text-sm font-medium text-blue-600">
-                {(clientType === 'custab' ? product.neto_custab : product.neto_partner).toFixed(2)}€
-              </dd>
-            </div>
-          </dl>
-        </div>
+        {/* Promoción si existe */}
+        {product.promocion_familia && (
+          <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+            <h3 className="text-base font-medium text-green-800 flex items-center gap-2 mb-2">
+              <Tag className="h-5 w-5" />
+              ¡Promoción activa!
+            </h3>
+            <p className="text-sm text-green-700">{product.promocion_familia}</p>
+            <p className="text-base font-semibold text-green-800 mt-2">
+              Precio promocional: {clientType === 'custab' 
+                ? (product.neto_promo_custab?.toFixed(2) || 'N/A') 
+                : (product.neto_promo_partner?.toFixed(2) || 'N/A')}€
+            </p>
+          </div>
+        )}
       </div>
 
-      {/* Promoción si existe */}
-      {product.promocion_familia && (
-        <div className="mt-6 bg-green-50 p-4 rounded-lg border border-green-100">
-          <h3 className="text-sm font-medium text-green-800 flex items-center gap-2 mb-2">
-            <Tag className="h-4 w-4" />
-            Promoción activa
-          </h3>
-          <p className="text-sm text-green-700">{product.promocion_familia}</p>
-          <p className="text-sm font-medium text-green-800 mt-2">
-            Precio promocional por unidad: {clientType === 'custab' 
-              ? (product.neto_promo_custab?.toFixed(2) || 'N/A') 
-              : (product.neto_promo_partner?.toFixed(2) || 'N/A')}€
-          </p>
-        </div>
-      )}
-
       {/* Cantidad y añadir al carrito - Fijo en la parte inferior */}
-      <div className="sticky bottom-0 bg-white -mx-4 sm:mx-0 px-4 sm:px-0 pt-4 pb-4 sm:pb-0 mt-6 border-t border-gray-200">
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 sm:justify-between">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-            <label htmlFor="quantity" className="text-sm font-medium text-gray-700">
-              Cantidad:
-            </label>
-            <div className="flex items-center gap-2">
+      <div className="sticky bottom-0 bg-white -mx-4 sm:mx-0 px-4 sm:px-0 pt-4 pb-4 mt-6 border-t border-orange-100 shadow-[0_-1px_3px_rgba(0,0,0,0.05)]">
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
               <Button
                 variant="outline"
                 size="lg"
-                className="h-12 w-12 sm:h-10 sm:w-10"
+                className="h-12 w-12 border-orange-200 text-orange-600 hover:bg-orange-50"
                 onClick={() => handleQuantityChange(quantity - 1)}
                 disabled={quantity <= product.pedido_minimo}
               >
@@ -176,27 +176,31 @@ export default function ProductDetails({ product, clientType, onClose }: Product
                 min={product.pedido_minimo}
                 value={quantity}
                 onChange={(e) => handleQuantityChange(parseInt(e.target.value))}
-                className="h-12 sm:h-10 w-24 p-2 border rounded-md text-center text-lg sm:text-base"
+                className="h-12 w-20 p-2 border border-orange-200 rounded-lg text-center text-lg font-medium"
               />
               <Button
                 variant="outline"
                 size="lg"
-                className="h-12 w-12 sm:h-10 sm:w-10"
+                className="h-12 w-12 border-orange-200 text-orange-600 hover:bg-orange-50"
                 onClick={() => handleQuantityChange(quantity + 1)}
               >
                 +
               </Button>
             </div>
+            <div className="text-right">
+              <div className="text-sm text-orange-600">Total</div>
+              <div className="text-xl font-semibold text-[#E49B0F]">{(price * quantity).toFixed(2)}€</div>
+            </div>
           </div>
           <Button
             onClick={handleAddToCart}
             disabled={isAdding}
-            className={`h-12 sm:h-10 w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-6 ${isAdding ? 'opacity-75' : ''}`}
+            className={`h-12 w-full bg-[#E49B0F] hover:bg-[#E49B0F]/90 text-white text-lg font-medium ${isAdding ? 'opacity-75' : ''}`}
           >
             {isAdding ? (
               <Check className="h-5 w-5 mr-2" />
             ) : null}
-            Añadir ({(price * quantity).toFixed(2)}€)
+            Añadir al carrito
           </Button>
         </div>
       </div>
