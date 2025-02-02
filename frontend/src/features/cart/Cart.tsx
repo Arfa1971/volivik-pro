@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { ShoppingCart, Plus, Minus, X } from 'lucide-react';
+import { ShoppingCart, Plus, Minus, X, Tag, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { Badge } from '@/components/ui/badge';
 import { ProductThumbnail } from '@/components/ui/product-thumbnail';
@@ -259,53 +259,67 @@ export default function Cart() {
                 }
                 
                 return (
-                  <div key={item.product.id} className="flex items-center gap-4 p-4 bg-white rounded-lg shadow-sm border border-gray-100 hover:border-orange-100 transition-colors">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="absolute right-2 top-2 hover:bg-red-100 hover:text-red-600"
-                      onClick={() => removeFromCart(item.product.id)}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                    <ProductThumbnail code={item.product.codigo} className="w-16 h-16 rounded-lg border border-orange-100" />
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-medium truncate text-orange-900">{item.product.descripcion}</h4>
-                      <div className="flex items-center gap-2">
-                        <p className="text-sm text-orange-500 font-medium">{item.product.codigo}</p>
-                        {/* Solo mostrar el badge si es familia CRISTAL y hay 10 o más cajas */}
+                  <div key={item.product.id} className="relative bg-white rounded-lg shadow-sm border border-orange-100 hover:border-orange-200 transition-colors overflow-hidden">
+                    {/* Cabecera del producto */}
+                    <div className="p-4 flex items-start gap-4">
+                      <ProductThumbnail code={item.product.codigo} className="w-20 h-20 sm:w-16 sm:h-16 rounded-lg border border-orange-100" />
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-medium text-lg sm:text-base text-orange-900 leading-tight">{item.product.descripcion}</h4>
+                        <div className="mt-1 flex flex-wrap items-center gap-2">
+                          <span className="text-base sm:text-sm font-medium text-orange-600">{item.product.codigo}</span>
+                          <span className="text-sm text-orange-500">{item.product.familia_producto}</span>
+                        </div>
+                        {/* Promociones */}
                         {FAMILIAS_CON_PROMOCION.includes(item.product.familia_producto) && 
                          boxesByFamily[item.product.familia_producto] >= 10 && (
-                          <Badge variant="secondary" className="bg-green-100 text-green-800 text-xs font-semibold px-2">
-                            -10%
-                          </Badge>
+                          <div className="mt-2 inline-flex items-center gap-2 px-3 py-1 bg-green-50 border border-green-200 rounded-full">
+                            <Tag className="h-4 w-4 text-green-600" />
+                            <span className="text-sm font-medium text-green-700">10% dto. por volumen</span>
+                          </div>
                         )}
                       </div>
-                      <p className="text-xs text-gray-500">{item.product.familia_producto}</p>
-                      <div className="mt-2 flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="hover:bg-red-50 hover:text-red-600 rounded-full"
+                        onClick={() => removeFromCart(item.product.id)}
+                      >
+                        <X className="h-5 w-5" />
+                      </Button>
+                    </div>
+
+                    {/* Controles de cantidad y precio */}
+                    <div className="p-4 bg-orange-50/50 border-t border-orange-100 flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-3">
                         <Button
                           variant="outline"
                           size="icon"
-                          className="h-7 w-7 border-orange-200 hover:bg-orange-100 hover:text-orange-600"
+                          className="h-9 w-9 border-orange-200 bg-white text-orange-600 hover:bg-orange-50"
                           onClick={() => handleQuantityChange(item.product.id, item.quantity - item.product.pedido_minimo, item.product.pedido_minimo)}
                           disabled={item.quantity <= item.product.pedido_minimo}
                         >
-                          <Minus className="h-3 w-3" />
+                          <Minus className="h-4 w-4" />
                         </Button>
-                        <span className="w-12 text-center font-medium">{item.quantity}</span>
+                        <input
+                          type="number"
+                          value={item.quantity}
+                          onChange={(e) => handleQuantityChange(item.product.id, parseInt(e.target.value), item.product.pedido_minimo)}
+                          className="h-9 w-16 text-center border border-orange-200 rounded-md bg-white text-base font-medium"
+                          min={item.product.pedido_minimo}
+                        />
                         <Button
                           variant="outline"
                           size="icon"
-                          className="h-7 w-7 border-orange-200 hover:bg-orange-100 hover:text-orange-600"
+                          className="h-9 w-9 border-orange-200 bg-white text-orange-600 hover:bg-orange-50"
                           onClick={() => handleQuantityChange(item.product.id, item.quantity + item.product.pedido_minimo, item.product.pedido_minimo)}
                         >
-                          <Plus className="h-3 w-3" />
+                          <Plus className="h-4 w-4" />
                         </Button>
                       </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="font-semibold text-orange-900">{formatPrice(price)}€</div>
-                      <div className="text-sm font-medium text-orange-600">Total: {formatPrice(price * item.quantity)}€</div>
+                      <div className="text-right">
+                        <div className="text-sm text-orange-600">Precio: {formatPrice(price)}€</div>
+                        <div className="text-lg font-semibold text-[#E49B0F]">Total: {formatPrice(price * item.quantity)}€</div>
+                      </div>
                     </div>
                     <Button
                       variant="ghost"
@@ -320,26 +334,34 @@ export default function Cart() {
               })}
               {/* Paginación */}
               {totalPages > 1 && (
-                <div className="flex justify-center gap-2 mt-4">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                    disabled={currentPage === 1}
-                  >
-                    Anterior
-                  </Button>
-                  <span className="flex items-center px-3 text-sm text-gray-600">
-                    Página {currentPage} de {totalPages}
-                  </span>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                    disabled={currentPage === totalPages}
-                  >
-                    Siguiente
-                  </Button>
+                <div className="flex flex-col items-center gap-4 mt-6 pb-4">
+                  <div className="flex justify-center items-center gap-3">
+                    <Button
+                      variant="outline"
+                      size="lg"
+                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                      disabled={currentPage === 1}
+                      className="h-12 px-6 border-orange-200 hover:bg-orange-50 hover:text-orange-600 disabled:opacity-50"
+                    >
+                      <ChevronLeft className="h-5 w-5 mr-2" />
+                      Anterior
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="lg"
+                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                      disabled={currentPage === totalPages}
+                      className="h-12 px-6 border-orange-200 hover:bg-orange-50 hover:text-orange-600 disabled:opacity-50"
+                    >
+                      Siguiente
+                      <ChevronRight className="h-5 w-5 ml-2" />
+                    </Button>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-orange-600">
+                    <span className="font-medium">Página {currentPage}</span>
+                    <span>de</span>
+                    <span className="font-medium">{totalPages}</span>
+                  </div>
                 </div>
               )}
             </div>
