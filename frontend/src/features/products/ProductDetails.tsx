@@ -73,7 +73,7 @@ export default function ProductDetails({ product, clientType, onClose }: Product
       <div className="mt-6 space-y-6">
         {/* Imagen del producto */}
         <div className="aspect-square w-full max-w-md mx-auto bg-white rounded-lg overflow-hidden">
-          <ProductImages code={product.codigo} />
+          <ProductImages productCode={product.codigo} size="lg" />
         </div>
 
         {/* Información del producto y logística */}
