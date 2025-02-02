@@ -21,7 +21,9 @@ function App() {
         setError(null);
         console.log('Fetching products...');
 
-        const response = await fetch('http://localhost:3001/api/v1/products');
+        const apiUrl = import.meta.env.VITE_API_URL;
+        console.log('Using API URL:', apiUrl);
+        const response = await fetch(`${apiUrl}/products`);
         if (!response.ok) {
           throw new Error(`Error al cargar los productos: ${response.status} ${response.statusText}`);
         }
