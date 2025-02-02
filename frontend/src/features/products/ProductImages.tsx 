@@ -1,0 +1,40 @@
+import { supabase } from '@/lib/supabase';
+import { FileImage } from 'lucide-react';
+
+interface ProductImagesProps {
+  productCode: string;
+  className?: string;
+  size?: 'sm' | 'md' | 'lg';
+}
+
+const sizeClasses = {
+  sm: 'w-8 h-8',
+  md: 'w-32 h-32',
+  lg: 'w-full aspect-square'
+};
+
+export function ProductImages({ 
+  productCode, 
+  className = '', 
+  size = 'md'
+}: ProductImagesProps) {
+  const imageUrl = supabase
+    .storage
+    .from('product-images')
+    .getPublicUrl(`${productCode}.jpg`)
+    .data?.publicUrl;
+
+  return (
+    <div className={`${sizeClasses[size]} rounded-lg border overflow-hidden bg-gray-50 flex items-center justify-center ${className}`}>
+      {imageUrl ? (
+        <img
+          src={imageUrl}
+          alt={`Producto ${productCode}`}
+          className="w-full h-full object-contain"
+        />
+      ) : (
+        <FileImage className={size === 'sm' ? 'h-4 w-4' : 'h-12 w-12'} />
+      )}
+    </div>
+  );
+}
