@@ -206,22 +206,34 @@ export default function Cart() {
       </SheetTrigger>
       <SheetContent className="w-[400px] sm:w-[540px] flex flex-col bg-white">
         <SheetHeader className="border-b border-orange-100 pb-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <img src="/assets/logoBic.png" alt="BIC Logo" className="h-8" />
-              <SheetTitle className="text-xl font-semibold text-[#E49B0F]">
-                Presupuesto BIC
-              </SheetTitle>
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <img src="/assets/logoBic.png" alt="BIC Logo" className="h-8" />
+                <SheetTitle className="text-xl font-semibold text-[#E49B0F]">
+                  Presupuesto BIC
+                </SheetTitle>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onClose}
+                className="h-10 w-10 rounded-full hover:bg-gray-100"
+              >
+                <X className="h-5 w-5 text-gray-500" />
+              </Button>
             </div>
             {cart.length > 0 && (
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => {
-                  clearCart();
-                  toast.success('Carrito vaciado correctamente');
+                  if (window.confirm('¿Estás seguro de que quieres vaciar el carrito?')) {
+                    clearCart();
+                    toast.success('Carrito vaciado correctamente');
+                  }
                 }}
-                className="border-orange-200 text-orange-600 hover:bg-orange-100 hover:text-orange-700"
+                className="w-full border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 hover:border-red-300"
               >
                 Vaciar carrito
               </Button>
