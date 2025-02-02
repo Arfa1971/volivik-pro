@@ -214,14 +214,7 @@ export default function Cart() {
                   Presupuesto BIC
                 </SheetTitle>
               </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setIsOpen(false)}
-                className="h-10 w-10 rounded-full hover:bg-gray-100"
-              >
-                <X className="h-5 w-5 text-gray-500" />
-              </Button>
+
             </div>
             {cart.length > 0 && (
               <Button
