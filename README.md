@@ -23,12 +23,77 @@ bic-quotation-app/
 
 - Node.js (v18 o superior)
 - npm o yarn
-- SQLite
+- Xcode (para desarrollo iOS)
+- CocoaPods (para dependencias iOS)
+- Cuenta en Supabase
 
 ## Configuración Inicial
 
 1. Clonar el repositorio:
 ```bash
+git clone https://github.com/Arfa1971/volivik-pro.git
+cd volivik-pro
+```
+
+2. Configurar el backend:
+```bash
+cd backend
+npm install
+# Configurar variables de entorno
+cp .env.example .env
+```
+
+3. Configurar el frontend:
+```bash
+cd frontend
+npm install
+# Configurar variables de entorno
+cp .env.example .env
+```
+
+4. Configurar iOS (opcional):
+```bash
+cd frontend
+npx cap add ios
+cd ios/App
+pod install
+```
+
+## Desarrollo
+
+1. Iniciar el backend:
+```bash
+cd backend
+npm run dev
+```
+
+2. Iniciar el frontend:
+```bash
+cd frontend
+npm run dev
+```
+
+3. Desarrollo iOS:
+```bash
+cd frontend
+npm run build
+npx cap sync
+npx cap open ios
+```
+
+## Despliegue
+
+### Backend
+- El backend está configurado para desplegarse en Render
+- Asegúrate de configurar las variables de entorno en el panel de Render
+
+### Frontend
+- El frontend está preparado para desplegarse en Vercel
+- Configura las variables de entorno en el panel de Vercel
+
+### iOS
+- Usa Xcode para generar el archivo IPA
+- Sigue las instrucciones de Apple para publicar en la App Store
 git clone <url-del-repositorio>
 cd bic-quotation-app
 ```
