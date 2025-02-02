@@ -321,14 +321,7 @@ export default function Cart() {
                         <div className="text-lg font-semibold text-[#E49B0F]">Total: {formatPrice(price * item.quantity)}€</div>
                       </div>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 hover:bg-orange-100 hover:text-orange-600"
-                      onClick={() => removeFromCart(item.product.id)}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
+
                   </div>
                 );
               })}
