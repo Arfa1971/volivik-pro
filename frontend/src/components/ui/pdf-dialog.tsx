@@ -12,7 +12,7 @@ import { Label } from '@/components/ui/label';
 import { FileText, Mail } from 'lucide-react';
 
 interface PdfDialogProps {
-  onGenerate: (customerName: string, email: string) => void;
+  onGenerate: (customerName: string, email: string) => Promise<{ blob: Blob; fileName: string }>;
 }
 
 export function PdfDialog({ onGenerate }: PdfDialogProps) {
