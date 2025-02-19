@@ -241,10 +241,6 @@ export default function Cart() {
       toast.error('Error al generar el presupuesto');
       throw error;
     }
-    } catch (error) {
-      console.error('Error al generar PDF:', error);
-      toast.error('Error al generar el presupuesto');
-    }
   };
 
   return (
