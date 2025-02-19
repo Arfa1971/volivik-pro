@@ -30,6 +30,7 @@ export interface Product {
   // Categorización
   familia_producto: string;
   categoria: string;
+  catalogo: string;
   
   // Imagen
   imagen_nombre?: string;

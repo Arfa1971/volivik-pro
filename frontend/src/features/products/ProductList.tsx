@@ -10,9 +10,6 @@ import ProductDetails from './ProductDetails';
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
 } from "@/components/ui/dialog";
 import {
   Select,
@@ -20,6 +17,9 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  SelectGroup,
+  SelectLabel,
+  SelectSeparator,
 } from "@/components/ui/select";
 
 interface ProductListProps {
@@ -30,34 +30,39 @@ interface ProductListProps {
 
 export function ProductList({ products, loading = false, error }: ProductListProps) {
   const [searchTerm, setSearchTerm] = useState('');
-  const [familySearchTerm, setFamilySearchTerm] = useState('');
+  const [filterValue, setFilterValue] = useState<string>('all');
   const [clientType, setClientType] = useState<'custab' | 'partner'>('custab');
-  const [selectedFamily, setSelectedFamily] = useState<string>('_none');
   const [currentPage, setCurrentPage] = useState(1);
-  const [quantities, setQuantities] = useState<Record<string, number>>({});
+  const [quantities, setQuantities] = useState<Record<string, number>>(() => {
+    // Inicializar cantidades basadas en la familia del producto
+    return products.reduce((acc, product) => ({
+      ...acc,
+      [product.id]: product.familia_producto === 'PLASTIDECOR1' ? product.unidades_por_caja : product.pedido_minimo
+    }), {});
+  });
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const itemsPerPage = 10;
   const { addToCart } = useCart();
 
-  // Función para formatear precios
   const formatPrice = (price: number | undefined | null): string => {
     if (typeof price !== 'number') return '0.00';
     return price.toFixed(2);
   };
 
-  // Función para formatear descuentos
   const formatDiscount = (discount: number | undefined | null): string => {
     if (typeof discount !== 'number' || discount === 0) return '';
     return `-${discount}%`;
   };
 
-  // Manejar cambios en la cantidad
   const handleQuantityChange = (productId: string, value: number) => {
     const product = products.find(p => p.id === productId);
     if (!product) return;
 
-    const minQuantity = product.pedido_minimo;
-    const newQuantity = Math.max(minQuantity, value);
+    const baseUnit = product.pedido_minimo;
+
+    // Asegurarse de que la cantidad sea un múltiplo de la unidad base
+    const multiplier = Math.max(1, Math.round(value / baseUnit));
+    const newQuantity = multiplier * baseUnit;
 
     setQuantities(prev => ({
       ...prev,
@@ -65,34 +70,34 @@ export function ProductList({ products, loading = false, error }: ProductListPro
     }));
   };
 
-  // Filtrar productos
   const filteredProducts = products.filter(product => {
+    console.log('Product:', {
+      codigo: product.codigo,
+      catalogo: product.catalogo,
+      familia: product.familia_producto
+    });
+
     const matchesSearch = (
       product.codigo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.descripcion.toLowerCase().includes(searchTerm.toLowerCase())
+      product.descripcion.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (product.ean?.toString() || '').toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    if (selectedFamily === '_all') {
-      const hasRealPromotion = clientType === 'custab'
-        ? (product.neto_promo_custab !== null && product.descuento_promo_q > 0)
-        : (product.neto_promo_partner !== null && product.descuento_promo_q > 0);
-      return matchesSearch && hasRealPromotion;
+    // Filtros combinados
+    if (filterValue === 'promotion') {
+      const hasPromotion = product.codigo === '9615921' || (
+        clientType === 'custab'
+          ? (product.neto_promo_custab !== null && product.descuento_promo_q > 0)
+          : (product.neto_promo_partner !== null && product.descuento_promo_q > 0)
+      );
+      if (!hasPromotion) return false;
+    } else if (filterValue !== 'all') {
+      if (product.catalogo !== filterValue) return false;
     }
 
-    if (selectedFamily === '_none') {
-      return matchesSearch;
-    }
-
-    return matchesSearch && product.familia_producto === selectedFamily;
+    return matchesSearch;
   });
 
-  // Obtener familias únicas para el filtro
-  const uniqueFamilies = Array.from(new Set(products.map(p => p.familia_producto))).filter(Boolean).sort();
-  const filteredFamilies = familySearchTerm
-    ? uniqueFamilies.filter(f => f.toLowerCase().includes(familySearchTerm.toLowerCase()))
-    : uniqueFamilies;
-
-  // Paginación
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = filteredProducts.slice(indexOfFirstItem, indexOfLastItem);
@@ -106,26 +111,25 @@ export function ProductList({ products, loading = false, error }: ProductListPro
             <span className="text-lg">Filtros:</span>
           </div>
 
-          <Select value={selectedFamily} onValueChange={setSelectedFamily}>
+          {/* Filtro Combinado */}
+          <Select value={filterValue} onValueChange={setFilterValue}>
             <SelectTrigger className="w-[250px] border-orange-200 hover:border-orange-400 transition-colors">
-              <SelectValue placeholder="FAMILIA PRODUCTO" />
+              <SelectValue placeholder="Filtrar productos..." />
             </SelectTrigger>
-            <SelectContent className="max-h-[300px]">
-              <div className="sticky top-0 bg-white p-2 border-b border-orange-100">
-                <Input
-                  placeholder="Buscar familia..."
-                  value={familySearchTerm}
-                  onChange={(e) => setFamilySearchTerm(e.target.value)}
-                  className="h-9 border-orange-200 focus-visible:ring-orange-400"
-                />
-              </div>
-              <SelectItem value="_none" className="hover:bg-orange-50">Todos los productos</SelectItem>
-              <SelectItem value="_all" className="hover:bg-orange-50">Con Promoción Q</SelectItem>
-              {filteredFamilies.map(family => (
-                <SelectItem key={family} value={family} className="hover:bg-orange-50">
-                  {family}
-                </SelectItem>
-              ))}
+            <SelectContent>
+              <SelectGroup>
+                <SelectLabel>General</SelectLabel>
+                <SelectItem value="all">Todos los productos</SelectItem>
+                <SelectItem value="promotion">Con Promoción</SelectItem>
+              </SelectGroup>
+              <SelectSeparator />
+              <SelectGroup>
+                <SelectLabel>Catálogos</SelectLabel>
+                <SelectItem value="STATIONERY">STATIONERY</SelectItem>
+                <SelectItem value="LIGHTERS">LIGHTERS</SelectItem>
+                <SelectItem value="DURACELL">DURACELL</SelectItem>
+                <SelectItem value="BLADE">BLADE</SelectItem>
+              </SelectGroup>
             </SelectContent>
           </Select>
 
@@ -149,7 +153,7 @@ export function ProductList({ products, loading = false, error }: ProductListPro
           <div className="flex-1 max-w-md">
             <div className="relative">
               <Input
-                placeholder="Buscar por código o descripción..."
+                placeholder="Buscar por código, descripción o EAN..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full border-orange-200 focus-visible:ring-orange-400"
@@ -164,21 +168,57 @@ export function ProductList({ products, loading = false, error }: ProductListPro
           <table className="w-full">
             <thead>
               <tr className="border-b border-orange-100">
+                <th className="text-left p-4 bg-orange-50/50 font-medium text-orange-900">Imagen</th>
                 <th className="text-left p-4 bg-orange-50/50 font-medium text-orange-900">Código</th>
                 <th className="text-left p-4 bg-orange-50/50 font-medium text-orange-900">Descripción</th>
-                <th className="text-right p-4 bg-orange-50/50 font-medium text-orange-900">Precio</th>
-                <th className="text-center p-4 bg-orange-50/50 font-medium text-orange-900">Acciones</th>
+                <th className="text-right p-4 bg-orange-50/50 font-medium text-orange-900">Precios</th>
+                <th className="text-center p-4 bg-orange-50/50 font-medium text-orange-900 w-[200px]">Acciones</th>
               </tr>
             </thead>
             <tbody>
               {currentItems.map((product) => {
                 const quantity = quantities[product.id] || product.pedido_minimo;
-                const price = clientType === 'custab'
-                  ? (product.neto_promo_custab || product.neto_custab)
-                  : (product.neto_promo_partner || product.neto_partner);
+                // Determinar si se aplica el precio promocional
+                const shouldApplyPromo = product.codigo === '8757704'
+                  ? quantity >= 120 && (clientType === 'custab' ? product.neto_promo_custab : product.neto_promo_partner)
+                  : true;
+
+                // Determinar el precio base según el tipo de cliente y catálogo
+                let price = product.precio_tarifa ?? 0; // Valor por defecto
+                try {
+                  if (['DURACELL', 'BLADE', 'LIGHTERS'].includes(product.catalogo)) {
+                    // Para catálogos especiales, usar precio neto o tarifa
+                    price = clientType === 'custab'
+                      ? (product.neto_custab ?? product.precio_tarifa ?? 0)
+                      : (product.neto_partner ?? product.precio_tarifa ?? 0);
+                  } else {
+                    // Para otros catálogos mantener la lógica original
+                    price = clientType === 'custab'
+                      ? (shouldApplyPromo ? (product.neto_promo_custab ?? product.neto_custab) : (product.neto_custab ?? product.precio_tarifa))
+                      : (shouldApplyPromo ? (product.neto_promo_partner ?? product.neto_partner) : (product.neto_partner ?? product.precio_tarifa));
+                  }
+                } catch (error) {
+                  console.error('Error calculando precio en lista:', {
+                    error,
+                    catalogo: product.catalogo,
+                    codigo: product.codigo,
+                    clientType
+                  });
+                }
+
+                const discount = clientType === 'custab'
+                  ? (shouldApplyPromo && product.neto_promo_custab ? product.descuento_promo_q : 0)
+                  : (shouldApplyPromo && product.neto_promo_partner ? product.descuento_promo_q : 0);
 
                 return (
                   <tr key={product.id} className="border-b border-orange-100 hover:bg-orange-50/30">
+                    <td className="p-4">
+                      <ProductImages
+                        productCode={product.codigo}
+                        size="sm"
+                        className="mx-auto"
+                      />
+                    </td>
                     <td className="p-4">
                       <button
                         onClick={() => setSelectedProduct(product)}
@@ -195,19 +235,20 @@ export function ProductList({ products, loading = false, error }: ProductListPro
                         <div className="font-medium">{product.descripcion}</div>
                         <div className="text-sm text-gray-500 mt-1">
                           {product.familia_producto}
-                          {product.categoria && (
+                          {product.catalogo && (
                             <Badge variant="outline" className="ml-2 border-orange-200">
-                              {product.categoria}
+                              {product.catalogo}
                             </Badge>
                           )}
                         </div>
                       </button>
                     </td>
                     <td className="p-4 text-right">
-                      <div className="font-medium">{formatPrice(price)}€</div>
+                      <div className="text-sm text-gray-500">Tarifa: {formatPrice(product.precio_tarifa)}€</div>
+                      <div className="font-medium text-orange-600">Neto: {formatPrice(price)}€</div>
                       {product.descuento_promo_q > 0 && (
                         <div className="text-sm font-medium text-green-600 mt-1">
-                          {formatDiscount(product.descuento_promo_q)}
+                          -{product.descuento_promo_q}%
                         </div>
                       )}
                     </td>
@@ -281,10 +322,9 @@ export function ProductList({ products, loading = false, error }: ProductListPro
 
           {(() => {
             const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
-            const range = 2; // Número de páginas a mostrar a cada lado
+            const range = 2;
             let pages = [];
 
-            // Siempre mostrar primera página
             if (currentPage > 1 + range) {
               pages.push(1);
               if (currentPage > 2 + range) {
@@ -292,12 +332,10 @@ export function ProductList({ products, loading = false, error }: ProductListPro
               }
             }
 
-            // Páginas alrededor de la actual
             for (let i = Math.max(1, currentPage - range); i <= Math.min(totalPages, currentPage + range); i++) {
               pages.push(i);
             }
 
-            // Siempre mostrar última página
             if (currentPage < totalPages - range) {
               if (currentPage < totalPages - range - 1) {
                 pages.push('...');

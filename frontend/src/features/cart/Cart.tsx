@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { ShoppingCart, Plus, Minus, X, Tag, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ShoppingCart, Plus, Minus, X, Tag, ChevronLeft, ChevronRight, FileText } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { Badge } from '@/components/ui/badge';
 import { ProductThumbnail } from '@/components/ui/product-thumbnail';
@@ -9,6 +9,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { toast } from 'sonner';
 import { formatPrice } from '@/lib/utils';
+import { PdfDialog } from '@/components/ui/pdf-dialog';
 
 // Lista de familias que pueden tener la promoción de 10 cajas
 const FAMILIAS_CON_PROMOCION = [
@@ -17,7 +18,8 @@ const FAMILIAS_CON_PROMOCION = [
   "CRISTAL LARGE",
   "CRISTAL SOFT",
   "CRISTAL FUN",
-  "CRISTAL UP"
+  "CRISTAL UP",
+  "PLASTIDECOR1" // Añadir PLASTIDECOR1 a las familias con promoción
 ];
 
 export default function Cart() {
@@ -41,10 +43,27 @@ export default function Cart() {
   }, {} as Record<string, number>);
 
   const totalAmount = cart.reduce((sum, item) => {
-    // Obtener el precio base con promociones existentes
-    const basePrice = item.clientType === 'custab'
-      ? (item.product.neto_promo_custab || item.product.neto_custab)
-      : (item.product.neto_promo_partner || item.product.neto_partner);
+    let basePrice;
+    
+    if (item.product.codigo === '8757712') {
+      // Para el producto 8757712
+      if (item.quantity < 120) {
+        // Si no llega a 120 unidades, usar precio neto sin promoción
+        basePrice = item.clientType === 'custab'
+          ? item.product.neto_custab
+          : item.product.neto_partner;
+      } else {
+        // Si es >= 120 unidades, usar precio promocional
+        basePrice = item.clientType === 'custab'
+          ? item.product.neto_promo_custab
+          : item.product.neto_promo_partner;
+      }
+    } else {
+      // Para otros productos, mantener la lógica original
+      basePrice = item.clientType === 'custab'
+        ? (item.product.neto_promo_custab || item.product.neto_custab)
+        : (item.product.neto_promo_partner || item.product.neto_partner);
+    }
 
     // Solo aplicar la lógica de promoción de 10 cajas a las familias CRISTAL
     let finalPrice = basePrice;
@@ -63,12 +82,27 @@ export default function Cart() {
   }, 0);
 
   const handleQuantityChange = (productId: string, newQuantity: number, minOrder: number) => {
-    if (newQuantity >= minOrder) {
-      updateQuantity(productId, newQuantity);
+    const item = cart.find(item => item.product.id === productId);
+    if (!item) return;
+
+    // Para PLASTIDECOR1, usar unidades_por_caja como base
+    const baseUnit = item.product.familia_producto === 'PLASTIDECOR1'
+      ? item.product.unidades_por_caja
+      : item.product.pedido_minimo;
+
+    if (newQuantity < baseUnit) {
+      toast.error(`La cantidad mínima ${item.product.familia_producto === 'PLASTIDECOR1' ? 'por caja' : 'de pedido'} es ${baseUnit} unidades`);
+      return;
     }
+
+    // Asegurarse de que la cantidad sea un múltiplo de la unidad base
+    const multiplier = Math.max(1, Math.round(newQuantity / baseUnit));
+    const adjustedQuantity = multiplier * baseUnit;
+
+    updateQuantity(productId, adjustedQuantity);
   };
 
-  const generatePDF = () => {
+  const generatePDF = async (customerName: string, email: string): Promise<{ blob: Blob; fileName: string }> => {
     try {
       const doc = new jsPDF();
       const clientType = cart[0]?.clientType.toUpperCase() || '';
@@ -90,7 +124,9 @@ export default function Cart() {
       doc.setTextColor(100, 100, 100);
       doc.setFontSize(11);
       doc.text(`Fecha: ${date}`, doc.internal.pageSize.width - 20, 40, { align: 'right' });
-      doc.text(`Cliente: ${clientType}`, doc.internal.pageSize.width - 20, 45, { align: 'right' });
+      doc.text(`Tipo: ${clientType}`, doc.internal.pageSize.width - 20, 45, { align: 'right' });
+      doc.text(`Cliente: ${customerName}`, doc.internal.pageSize.width - 20, 50, { align: 'right' });
+      doc.text(`Email: ${email}`, doc.internal.pageSize.width - 20, 55, { align: 'right' });
       
       // Agregar BIC Iberia S.A.
       doc.setTextColor(100, 100, 100);
@@ -106,7 +142,11 @@ export default function Cart() {
         
         // Solo aplicar la lógica de promoción de 10 cajas a las familias CRISTAL
         let price = basePrice;
-        if (FAMILIAS_CON_PROMOCION.includes(item.product.familia_producto)) {
+        let promoText = '';
+
+        if (item.product.codigo === '9615921') {
+          promoText = 'Material/Regalo incluido';
+        } else if (FAMILIAS_CON_PROMOCION.includes(item.product.familia_producto)) {
           const familyBoxes = boxesByFamily[item.product.familia_producto] || 0;
           if (familyBoxes >= 10) {
             // Calcular el precio base sin promociones
@@ -114,6 +154,7 @@ export default function Cart() {
               ? item.product.neto_custab
               : item.product.neto_partner;
             price = precioSinPromo * 0.9; // Aplicar 10% de descuento al precio sin promo
+            promoText = 'Descuento 10%';
           }
         }
         
@@ -133,17 +174,18 @@ export default function Cart() {
           promoDiscount ? `${promoDiscount}%` : '-',
           formatPrice(price),
           item.quantity,
-          formatPrice(price * item.quantity)
+          formatPrice(price * item.quantity),
+          promoText || '-' // Nueva columna para texto de promoción
         ];
       });
 
       autoTable(doc, {
         startY: 60,
-        head: [['Código', 'Descripción', 'Tarifa', 'Dto. Base', 'Dto. Cliente', 'Dto. Promo', 'Precio', 'Cantidad', 'Total']],
+        head: [['Código', 'Descripción', 'Tarifa', 'Dto. Base', 'Dto. Cliente', 'Dto. Promo', 'Precio', 'Cantidad', 'Total', 'Promoción']],
         body: tableData,
         theme: 'striped',
         headStyles: { fillColor: [228, 155, 15] }, // Color naranja/dorado de la app
-        foot: [['', '', '', '', '', '', '', 'Total:', formatPrice(totalAmount)]],
+        foot: [['', '', '', '', '', '', '', '', 'Total:', formatPrice(totalAmount)]],
         footStyles: { fillColor: [240, 240, 240], textColor: [228, 155, 15], fontStyle: 'bold' },
       });
 
@@ -177,8 +219,23 @@ export default function Cart() {
       doc.text('Para cualquier consulta, no dude en contactar con su representante comercial.', 
               pageWidth / 2, footerY + 20, { align: 'center' });
 
-      doc.save(`presupuesto_${clientType.toLowerCase()}_${date}.pdf`);
+      // Generar nombre de archivo
+      const fileName = `presupuesto_${clientType.toLowerCase()}_${customerName.replace(/\s+/g, '_')}_${date}.pdf`;
+      
+      // Obtener el blob del PDF
+      const pdfOutput = doc.output('blob');
+      const blob = new Blob([pdfOutput], { type: 'application/pdf' });
+      
+      // Crear URL del blob y descargar el PDF
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      link.click();
+      window.URL.revokeObjectURL(url);
+      
       toast.success('Presupuesto generado correctamente');
+      return { blob, fileName };
     } catch (error) {
       console.error('Error al generar PDF:', error);
       toast.error('Error al generar el presupuesto');
@@ -261,13 +318,15 @@ export default function Cart() {
                 return (
                   <div key={item.product.id} className="relative bg-white rounded-lg shadow-sm border border-orange-100 hover:border-orange-200 transition-colors overflow-hidden">
                     {/* Cabecera del producto */}
-                    <div className="p-4 flex items-start gap-4">
-                      <ProductThumbnail code={item.product.codigo} className="w-20 h-20 sm:w-16 sm:h-16 rounded-lg border border-orange-100" />
+                    <div className="p-4 flex items-start justify-between gap-4">
                       <div className="flex-1 min-w-0">
                         <h4 className="font-medium text-lg sm:text-base text-orange-900 leading-tight">{item.product.descripcion}</h4>
-                        <div className="mt-1 flex flex-wrap items-center gap-2">
-                          <span className="text-base sm:text-sm font-medium text-orange-600">{item.product.codigo}</span>
-                          <span className="text-sm text-orange-500">{item.product.familia_producto}</span>
+                        <div className="mt-2 space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-base sm:text-sm font-medium text-orange-600">Código: {item.product.codigo}</span>
+                          </div>
+                          <div className="text-sm text-orange-500">Familia: {item.product.familia_producto}</div>
+                          <div className="text-sm text-orange-500">Unidades/caja: {item.product.unidades_por_caja}</div>
                         </div>
                         {/* Promociones */}
                         {FAMILIAS_CON_PROMOCION.includes(item.product.familia_producto) && 
@@ -317,7 +376,14 @@ export default function Cart() {
                         </Button>
                       </div>
                       <div className="text-right">
-                        <div className="text-sm text-orange-600">Precio: {formatPrice(price)}€</div>
+                        <div className="text-sm text-orange-600">
+                          Precio: {formatPrice(item.clientType === 'custab' ? item.product.neto_custab : item.product.neto_partner)}€
+                          {['8757712', '9203013', '9339613'].includes(item.product.codigo) && item.quantity >= 120 && (
+                            <span className="ml-1 text-green-600">
+                              → {formatPrice(item.clientType === 'custab' ? item.product.neto_promo_custab : item.product.neto_promo_partner)}€
+                            </span>
+                          )}
+                        </div>
                         <div className="text-lg font-semibold text-[#E49B0F]">Total: {formatPrice(price * item.quantity)}€</div>
                       </div>
                     </div>
@@ -366,12 +432,7 @@ export default function Cart() {
               <span className="text-lg font-semibold text-orange-900">Total</span>
               <span className="text-lg font-semibold text-[#E49B0F]">{formatPrice(totalAmount)}€</span>
             </div>
-            <Button 
-              className="w-full bg-[#E49B0F] hover:bg-[#E49B0F]/90" 
-              onClick={generatePDF}
-            >
-              Generar PDF
-            </Button>
+            <PdfDialog onGenerate={generatePDF} />
           </div>
         )}
       </SheetContent>

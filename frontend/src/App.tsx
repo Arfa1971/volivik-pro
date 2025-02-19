@@ -4,6 +4,7 @@ import { CartProvider } from '@/context/CartContext';
 import { Toaster } from 'sonner';
 import { Product } from '@/types/product';
 import Cart from '@/features/cart/Cart';
+import '@/lib/pdf';
 
 function App() {
   console.log('App component initializing...');

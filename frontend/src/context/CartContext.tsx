@@ -79,7 +79,8 @@ const FAMILIAS_CON_PROMOCION = [
   "CRISTAL LARGE",
   "CRISTAL SOFT",
   "CRISTAL FUN",
-  "CRISTAL UP"
+  "CRISTAL UP",
+  "PLASTIDECOR1" // Añadir PLASTIDECOR1 a las familias con promoción
 ];
 
 export function CartProvider({ children }: { children: ReactNode }) {
@@ -114,7 +115,22 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const total = state.cartItems.reduce((sum, item) => {
     let finalPrice;
-    if (FAMILIAS_CON_PROMOCION.includes(item.product.familia_producto)) {
+
+    if (item.product.codigo === '8757704') {
+      // Para el producto 8757704, verificar si la cantidad es >= 10 cajas (120 unidades)
+      const basePrice = item.clientType === 'custab'
+        ? item.product.neto_custab
+        : item.product.neto_partner;
+
+      const familyBoxes = boxesByFamily[item.product.familia_producto] || 0;
+      const hasPromoPrice = item.clientType === 'custab'
+        ? item.product.neto_promo_custab
+        : item.product.neto_promo_partner;
+
+      finalPrice = familyBoxes >= 10 && hasPromoPrice
+        ? (item.clientType === 'custab' ? item.product.neto_promo_custab : item.product.neto_promo_partner)
+        : basePrice;
+    } else if (FAMILIAS_CON_PROMOCION.includes(item.product.familia_producto)) {
       // Para familias CRISTAL, usar precio base y aplicar 10% si hay 10+ cajas
       const basePrice = item.clientType === 'custab'
         ? item.product.neto_custab

@@ -39,6 +39,7 @@ export class ProductService {
         promocion_familia: product.promocion_familia,
         familia_producto: product.familia_producto,
         categoria: product.categoria,
+        catalogo: product.catalogo,
         created_at: product.created_at,
         updated_at: product.updated_at,
         activo: product.activo
@@ -87,6 +88,7 @@ export class ProductService {
         promocion_familia: product.promocion_familia,
         familia_producto: product.familia_producto,
         categoria: product.categoria,
+        catalogo: product.catalogo,
         created_at: product.created_at,
         updated_at: product.updated_at,
         activo: product.activo
