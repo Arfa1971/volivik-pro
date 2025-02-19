@@ -106,7 +106,7 @@ export const AddToCart: React.FC<AddToCartProps> = ({ product, clientType }) => 
   } else {
     netPrice = getNetPrice();
   }
-  totalPrice = netPrice * quantity;
+  totalPrice = (netPrice ?? 0) * quantity;
 
   return (
     <div className="flex flex-col gap-4 p-4 border rounded-lg bg-white shadow-sm">
@@ -139,7 +139,7 @@ export const AddToCart: React.FC<AddToCartProps> = ({ product, clientType }) => 
       </div>
 
       <div className="text-sm text-gray-600">
-        <p>Precio unitario: {netPrice.toFixed(2)}€</p>
+        <p>Precio unitario: {(netPrice ?? 0).toFixed(2)}€</p>
         <p>Total: {totalPrice.toFixed(2)}€</p>
         <p className="text-xs">
           {product.familia_producto === 'PLASTIDECOR1'

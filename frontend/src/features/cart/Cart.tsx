@@ -78,7 +78,7 @@ export default function Cart() {
       }
     }
     
-    return sum + (finalPrice * item.quantity);
+    return sum + ((finalPrice ?? 0) * item.quantity);
   }, 0);
 
   const handleQuantityChange = (productId: string, newQuantity: number, minOrder: number) => {
@@ -236,6 +236,11 @@ export default function Cart() {
       
       toast.success('Presupuesto generado correctamente');
       return { blob, fileName };
+    } catch (error) {
+      console.error('Error al generar PDF:', error);
+      toast.error('Error al generar el presupuesto');
+      throw error;
+    }
     } catch (error) {
       console.error('Error al generar PDF:', error);
       toast.error('Error al generar el presupuesto');

@@ -1,4 +1,10 @@
 export interface Product {
+  subcategoria?: string;
+  multiplo_venta?: number;
+  stock_disponible?: number;
+  peso_caja?: number;
+  volumen_caja?: number;
+  cajas_palet?: number;
   id: string;
   codigo: string;
   descripcion: string;

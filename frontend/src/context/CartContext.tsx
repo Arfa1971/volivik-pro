@@ -145,7 +145,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         : (item.product.neto_promo_partner || item.product.neto_partner);
     }
     
-    return sum + (finalPrice * item.quantity);
+    return sum + ((finalPrice ?? 0) * item.quantity);
   }, 0);
 
   return (
