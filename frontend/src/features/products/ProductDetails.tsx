@@ -28,11 +28,9 @@ export default function ProductDetails({ product, clientType, onClose }: Product
       promo_partner: product.neto_promo_partner
     }
   });
-  // Asegurar que pedido_minimo tenga un valor válido según el catálogo
-  const pedidoMinimo = ['DURACELL', 'BLADE'].includes(product.catalogo)
-    ? 1 // Para Duracell y Blade, usar 1 como pedido mínimo
-    : (product.pedido_minimo || 1);
-  const [quantity, setQuantity] = useState(pedidoMinimo);
+  // Usar el pedido mínimo del producto
+  const pedidoMinimo = product.pedido_minimo || 1;
+  const [quantity, setQuantity] = useState(pedidoMinimo); // Inicializar con el pedido mínimo
   const [isAdding, setIsAdding] = useState(false);
   const { addToCart } = useCart();
 
@@ -123,26 +121,19 @@ export default function ProductDetails({ product, clientType, onClose }: Product
   }
 
   const handleQuantityChange = (newQuantity: number) => {
-    const minQuantity = ['DURACELL', 'BLADE', 'LIGHTERS'].includes(product.catalogo)
-      ? 1 // Para catálogos especiales, usar 1 como pedido mínimo
-      : (product.pedido_minimo ?? 1);
+    const minQuantity = product.pedido_minimo ?? 1;
 
-    // Para los productos especiales
-    if (['8757712', '9203013', '9339613'].includes(product.codigo)) {
-      // No permitir cantidades menores al pedido mínimo
-      if (newQuantity < minQuantity) {
-        setQuantity(minQuantity);
-        toast.error(`La cantidad mínima de pedido es ${minQuantity} unidades`);
-        return;
-      }
-
-      // Asegurarse de que la cantidad sea un múltiplo del pedido mínimo
-      const multiplier = Math.max(1, Math.round(newQuantity / minQuantity));
-      const adjustedQuantity = multiplier * minQuantity;
-      setQuantity(adjustedQuantity);
-    } else {
-      setQuantity(newQuantity);
+    // No permitir cantidades menores al pedido mínimo
+    if (newQuantity < minQuantity) {
+      setQuantity(minQuantity);
+      toast.error(`La cantidad mínima de pedido es ${minQuantity} unidades`);
+      return;
     }
+
+    // Asegurarse de que la cantidad sea un múltiplo del pedido mínimo
+    const multiplier = Math.max(1, Math.round(newQuantity / minQuantity));
+    const adjustedQuantity = multiplier * minQuantity;
+    setQuantity(adjustedQuantity);
   };
 
   const handleAddToCart = () => {
@@ -228,105 +219,163 @@ export default function ProductDetails({ product, clientType, onClose }: Product
                 <dd className="text-base font-medium text-orange-900 mt-1">{product.ean?.toString() || 'N/A'}</dd>
               </div>
               <div>
+                <dt className="text-sm text-orange-600">Formato</dt>
+                <dd className="text-base font-medium text-orange-900 mt-1">{product.formato || 'N/A'}</dd>
+              </div>
+              <div>
                 <dt className="text-sm text-orange-600">Familia</dt>
                 <dd className="text-base font-medium text-orange-900 mt-1">{product.familia_producto}</dd>
+              </div>
+              <div>
+                <dt className="text-sm text-orange-600">Sub-familia</dt>
+                <dd className="text-base font-medium text-orange-900 mt-1">{product.familia || 'N/A'}</dd>
               </div>
               <div>
                 <dt className="text-sm text-orange-600">Catálogo</dt>
                 <dd className="text-base font-medium text-orange-900 mt-1">{product.catalogo}</dd>
               </div>
-              {product.subcategoria && (
-                <div>
-                  <dt className="text-sm text-orange-600">Subcategoría</dt>
-                  <dd className="text-base font-medium text-orange-900 mt-1">{product.subcategoria}</dd>
-                </div>
-              )}
             </div>
           </div>
 
+          {/* Información logística */}
           <div className="bg-orange-50/50 p-5 rounded-xl border border-orange-100">
             <h3 className="text-base font-medium text-orange-800 flex items-center gap-2 mb-4">
               <Box className="h-5 w-5" />
-              Logística
+              Información logística
             </h3>
-            <div className="space-y-3">
-              <div>
-                <dt className="text-sm text-orange-600">Unidades/caja</dt>
-                <dd className="text-base font-medium text-orange-900 mt-1">{product.unidades_por_caja} uds</dd>
+            <div className="space-y-6">
+              {/* Información básica */}
+              <div className="space-y-3">
+                <div>
+                  <dt className="text-sm text-orange-600">Unidades por caja</dt>
+                  <dd className="text-base font-medium text-orange-900 mt-1">{product.unidades_por_caja} uds</dd>
+                </div>
+                <div>
+                  <dt className="text-sm text-orange-600">Unidades por embalaje</dt>
+                  <dd className="text-base font-medium text-orange-900 mt-1">{product.unidades_por_embalaje} uds</dd>
+                </div>
+                <div>
+                  <dt className="text-sm text-orange-600">Pedido mínimo</dt>
+                  <dd className="text-base font-medium text-orange-900 mt-1">{product.pedido_minimo} uds</dd>
+                </div>
+                {product.multiplo_venta && (
+                  <div>
+                    <dt className="text-sm text-orange-600">Múltiplo de venta</dt>
+                    <dd className="text-base font-medium text-orange-900 mt-1">{product.multiplo_venta} uds</dd>
+                  </div>
+                )}
               </div>
-              <div>
-                <dt className="text-sm text-orange-600">Pedido mínimo</dt>
-                <dd className="text-base font-medium text-orange-900 mt-1">{product.pedido_minimo} uds</dd>
+
+              {/* Información de dimensiones y peso */}
+              <div className="space-y-3 border-t border-orange-100 pt-3">
+                {product.peso_caja && (
+                  <div>
+                    <dt className="text-sm text-orange-600">Peso por caja</dt>
+                    <dd className="text-base font-medium text-orange-900 mt-1">{product.peso_caja} kg</dd>
+                  </div>
+                )}
+                {product.volumen_caja && (
+                  <div>
+                    <dt className="text-sm text-orange-600">Volumen por caja</dt>
+                    <dd className="text-base font-medium text-orange-900 mt-1">{product.volumen_caja} m³</dd>
+                  </div>
+                )}
               </div>
-              {product.multiplo_venta && (
+
+              {/* Información de palet */}
+              <div className="space-y-3 border-t border-orange-100 pt-3">
+                {product.cajas_palet && (
+                  <div>
+                    <dt className="text-sm text-orange-600">Cajas por palet</dt>
+                    <dd className="text-base font-medium text-orange-900 mt-1">{product.cajas_palet} cajas</dd>
+                  </div>
+                )}
+                {product.cajas_palet && product.unidades_por_caja && (
+                  <div>
+                    <dt className="text-sm text-orange-600">Unidades por palet</dt>
+                    <dd className="text-base font-medium text-orange-900 mt-1">{product.cajas_palet * product.unidades_por_caja} uds</dd>
+                  </div>
+                )}
+              </div>
+
+              {/* Estado del producto */}
+              <div className="space-y-3 border-t border-orange-100 pt-3">
                 <div>
-                  <dt className="text-sm text-orange-600">Múltiplo de venta</dt>
-                  <dd className="text-base font-medium text-orange-900 mt-1">{product.multiplo_venta} uds</dd>
+                  <dt className="text-sm text-orange-600">Estado</dt>
+                  <dd className={`text-base font-medium mt-1 ${product.activo ? 'text-green-600' : 'text-red-600'}`}>
+                    {product.activo ? 'Activo' : 'Inactivo'}
+                  </dd>
                 </div>
-              )}
-              {product.stock_disponible && (
-                <div>
-                  <dt className="text-sm text-orange-600">Stock disponible</dt>
-                  <dd className="text-base font-medium text-orange-900 mt-1">{product.stock_disponible} uds</dd>
-                </div>
-              )}
-              {product.peso_caja && (
-                <div>
-                  <dt className="text-sm text-orange-600">Peso por caja</dt>
-                  <dd className="text-base font-medium text-orange-900 mt-1">{product.peso_caja} kg</dd>
-                </div>
-              )}
-              {product.volumen_caja && (
-                <div>
-                  <dt className="text-sm text-orange-600">Volumen por caja</dt>
-                  <dd className="text-base font-medium text-orange-900 mt-1">{product.volumen_caja} m³</dd>
-                </div>
-              )}
-              {product.cajas_palet && (
-                <div>
-                  <dt className="text-sm text-orange-600">Cajas por palet</dt>
-                  <dd className="text-base font-medium text-orange-900 mt-1">{product.cajas_palet} cajas</dd>
-                </div>
-              )}
+              </div>
             </div>
           </div>
 
-          {/* Precios */}
+          {/* Precios y descuentos */}
           <div className="bg-orange-50/50 p-5 rounded-xl border border-orange-100">
             <h3 className="text-base font-medium text-orange-800 flex items-center gap-2 mb-4">
               <Euro className="h-5 w-5" />
-              Precios
+              Precios y descuentos
             </h3>
-            <div className="grid gap-3">
+            <div className="space-y-4">
+              {/* Tarifa base */}
               <div>
                 <dt className="text-sm text-orange-600">Tarifa base</dt>
-                <dd className="text-base font-medium text-orange-900 mt-1">{(product.precio_tarifa ?? 0).toFixed(2)}€</dd>
+                <dd className="text-lg font-semibold text-orange-900 mt-1">{(product.precio_tarifa ?? 0).toFixed(2)}€</dd>
               </div>
-              {/* Solo mostrar descuentos si NO es Duracell + Partner */}
+
+              {/* Descuentos aplicados */}
               {!(product.catalogo === 'DURACELL' && clientType === 'partner') && (
-                <>
-                  <div>
-                    <dt className="text-sm text-orange-600">Descuento base</dt>
-                    <dd className="text-base font-medium text-green-600 mt-1">{(product.descuento_1 ?? 0).toFixed(2)}%</dd>
+                <div className="bg-purple-50 rounded-lg p-3 space-y-2">
+                  <h4 className="text-sm font-medium text-purple-800">Descuentos aplicados</h4>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <dt className="text-sm text-purple-600">Base</dt>
+                      <dd className="text-base font-medium text-purple-900">{(product.descuento_1 ?? 0).toFixed(1)}%</dd>
+                    </div>
+                    <div>
+                      <dt className="text-sm text-purple-600">{clientType === 'custab' ? 'Custab' : 'Partner'}</dt>
+                      <dd className="text-base font-medium text-purple-900">
+                        {(clientType === 'custab' ? (product.descuento_custab ?? 0) : (product.descuento_partner ?? 0)).toFixed(1)}%
+                      </dd>
+                    </div>
                   </div>
+                </div>
+              )}
+              {/* Precios netos */}
+              <div className="border-t border-orange-100 pt-3 space-y-2">
+                <div>
+                  <dt className="text-sm text-orange-600">Precio neto</dt>
+                  <dd className="text-lg font-semibold text-[#E49B0F] mt-1">
+                    {(clientType === 'custab' 
+                      ? (product.neto_custab ?? product.precio_tarifa ?? 0)
+                      : (product.neto_partner ?? product.precio_tarifa ?? 0)
+                    ).toFixed(2)}€
+                  </dd>
+                </div>
+                {/* Precio neto con promo */}
+                {((clientType === 'custab' && product.neto_promo_custab) || 
+                  (clientType === 'partner' && product.neto_promo_partner)) && (
                   <div>
-                    <dt className="text-sm text-orange-600">
-                      Dto. {clientType === 'custab' ? 'Custab' : 'Partner'}
-                    </dt>
-                    <dd className="text-base font-medium text-green-600 mt-1">
-                      {(clientType === 'custab' ? (product.descuento_custab ?? 0) : (product.descuento_partner ?? 0)).toFixed(2)}%
+                    <dt className="text-sm text-orange-600">Precio neto con promo</dt>
+                    <dd className="text-lg font-semibold text-green-600 mt-1">
+                      {(clientType === 'custab' 
+                        ? (product.neto_promo_custab ?? product.neto_custab ?? 0)
+                        : (product.neto_promo_partner ?? product.neto_partner ?? 0)
+                      ).toFixed(2)}€
                     </dd>
                   </div>
-                </>
-              )}
-              <div>
-                <dt className="text-sm text-orange-600">Precio neto</dt>
-                <dd className="text-lg font-semibold text-[#E49B0F] mt-1">
-                  {(clientType === 'custab' 
-                    ? (product.neto_custab ?? product.precio_tarifa ?? 0)
-                    : (product.neto_partner ?? product.precio_tarifa ?? 0)
-                  ).toFixed(2)}€
-                </dd>
+                )}
+                <div>
+                  <dt className="text-sm text-orange-600">Ahorro total</dt>
+                  <dd className="text-lg font-semibold text-green-600">
+                    {(() => {
+                      const precioFinal = clientType === 'custab'
+                        ? (product.neto_promo_custab ?? product.neto_custab ?? product.precio_tarifa ?? 0)
+                        : (product.neto_promo_partner ?? product.neto_partner ?? product.precio_tarifa ?? 0);
+                      return (((product.precio_tarifa ?? 0) - precioFinal) / (product.precio_tarifa ?? 1) * 100).toFixed(1);
+                    })()}%
+                  </dd>
+                </div>
               </div>
             </div>
           </div>

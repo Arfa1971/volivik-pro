@@ -9,34 +9,34 @@ interface ProductPromoPDFProps {
 // Estilos
 const styles = StyleSheet.create({
   page: {
-    padding: 40,
+    padding: 20,
     fontFamily: 'Helvetica',
     backgroundColor: '#FFFFFF'
   },
   container: {
     flex: 1,
-    gap: 20
+    gap: 10
   },
   header: {
-    marginBottom: 20
+    marginBottom: 10
   },
   title: {
-    fontSize: 24,
+    fontSize: 20,
     color: '#991B1B',
     marginBottom: 5
   },
   code: {
-    fontSize: 16,
+    fontSize: 14,
     color: '#E49B0F'
   },
   mainGrid: {
     flexDirection: 'row',
-    gap: 30,
-    marginBottom: 20
+    gap: 15,
+    marginBottom: 10
   },
   imageContainer: {
-    width: '30%',
-    height: 250,
+    width: '40%',
+    height: 300,
     backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center'
@@ -47,95 +47,119 @@ const styles = StyleSheet.create({
     objectFit: 'contain'
   },
   infoContainer: {
-    width: '70%',
-    gap: 20
+    width: '60%',
+    gap: 8
   },
   detailsSection: {
-    gap: 10
+    backgroundColor: '#FFF7ED',
+    padding: 8,
+    borderRadius: 4,
+    gap: 4,
+    marginBottom: 8
   },
   logisticSection: {
-    gap: 10,
-    marginTop: 10
+    backgroundColor: '#FFF7ED',
+    padding: 8,
+    borderRadius: 4,
+    gap: 4,
+    marginBottom: 8
+  },
+  sectionTitle: {
+    fontSize: 12,
+    color: '#991B1B',
+    fontWeight: 'bold',
+    marginBottom: 8
   },
   infoRow: {
     flexDirection: 'row',
-    gap: 10
+    gap: 6,
+    marginBottom: 2
   },
   label: {
-    fontSize: 12,
+    fontSize: 10,
     color: '#991B1B',
     width: '120px'
   },
   value: {
-    fontSize: 12,
+    fontSize: 10,
     color: '#000000',
     flex: 1
   },
   promoSection: {
     backgroundColor: '#ECFDF5',
-    padding: 20,
+    padding: 8,
     borderRadius: 4,
-    marginBottom: 20
-  },
-  promoTitle: {
-    fontSize: 16,
-    color: '#065F46',
-    fontWeight: 'bold',
     marginBottom: 8
   },
-  promoText: {
+  promoTitle: {
     fontSize: 14,
+    color: '#065F46',
+    fontWeight: 'bold',
+    marginBottom: 6
+  },
+  promoText: {
+    fontSize: 12,
     color: '#065F46'
   },
   priceSection: {
     backgroundColor: '#FFF7ED',
-    padding: 20,
+    padding: 8,
     borderRadius: 4
   },
   priceTitle: {
-    fontSize: 20,
+    fontSize: 16,
     color: '#991B1B',
-    marginBottom: 15,
+    marginBottom: 12,
     fontWeight: 'bold'
   },
   priceRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 10
+    marginBottom: 4
   },
   priceLabel: {
-    fontSize: 16,
-    color: '#EA580C'
+    fontSize: 12,
+    color: '#991B1B'
+  },
+  discountLabel: {
+    fontSize: 10,
+    color: '#6B21A8',
+    marginBottom: 2
+  },
+  discountValue: {
+    fontSize: 12,
+    color: '#6B21A8',
+    fontWeight: 'bold'
   },
   basePrice: {
-    fontSize: 20,
+    fontSize: 14,
     color: '#991B1B'
   },
   regularPrice: {
-    fontSize: 20,
-    color: '#991B1B'
+    fontSize: 14,
+    color: '#E49B0F'
   },
   promoPrice: {
-    fontSize: 20,
-    color: '#E49B0F',
+    fontSize: 14,
+    color: '#059669',
     fontWeight: 'bold'
   }
 });
 
 export const ProductPromoPDF = ({ product, clientType }: ProductPromoPDFProps) => {
   // Para PLASTIDECOR1, el precio promocional solo aplica a partir de 10 cajas
+  // Calcular precios con valores por defecto
   const regularPrice = clientType === 'custab'
-    ? product.neto_custab
-    : product.neto_partner;
+    ? (product.neto_custab ?? product.precio_tarifa ?? 0)
+    : (product.neto_partner ?? product.precio_tarifa ?? 0);
 
   const promoPrice = clientType === 'custab'
     ? product.neto_promo_custab
     : product.neto_promo_partner;
 
-  const price = product.familia_producto === 'PLASTIDECOR1'
-    ? promoPrice || regularPrice // Solo mostramos el precio promo en el PDF
-    : (promoPrice || regularPrice);
+  // Si no hay precio promocional, usar el precio regular
+  const price = promoPrice ?? regularPrice;
 
   return (
     <Document>
@@ -162,13 +186,22 @@ export const ProductPromoPDF = ({ product, clientType }: ProductPromoPDFProps) =
             <View style={styles.infoContainer}>
               {/* Detalles del producto */}
               <View style={styles.detailsSection}>
+                <Text style={styles.sectionTitle}>Detalles</Text>
                 <View style={styles.infoRow}>
                   <Text style={styles.label}>EAN:</Text>
                   <Text style={styles.value}>{product.ean}</Text>
                 </View>
                 <View style={styles.infoRow}>
+                  <Text style={styles.label}>Formato:</Text>
+                  <Text style={styles.value}>{product.formato || 'N/A'}</Text>
+                </View>
+                <View style={styles.infoRow}>
                   <Text style={styles.label}>Familia:</Text>
                   <Text style={styles.value}>{product.familia_producto}</Text>
+                </View>
+                <View style={styles.infoRow}>
+                  <Text style={styles.label}>Sub-familia:</Text>
+                  <Text style={styles.value}>{product.familia || 'N/A'}</Text>
                 </View>
                 <View style={styles.infoRow}>
                   <Text style={styles.label}>Catálogo:</Text>
@@ -178,15 +211,85 @@ export const ProductPromoPDF = ({ product, clientType }: ProductPromoPDFProps) =
 
               {/* Información logística */}
               <View style={styles.logisticSection}>
+                <Text style={styles.sectionTitle}>Información logística</Text>
                 <View style={styles.infoRow}>
-                  <Text style={styles.label}>Unidades/caja:</Text>
+                  <Text style={styles.label}>Unidades por caja:</Text>
                   <Text style={styles.value}>{product.unidades_por_caja} uds</Text>
+                </View>
+                <View style={styles.infoRow}>
+                  <Text style={styles.label}>Unidades por embalaje:</Text>
+                  <Text style={styles.value}>{product.unidades_por_embalaje} uds</Text>
                 </View>
                 <View style={styles.infoRow}>
                   <Text style={styles.label}>Pedido mínimo:</Text>
                   <Text style={styles.value}>{product.pedido_minimo} uds</Text>
                 </View>
+                {product.peso_caja && (
+                  <View style={styles.infoRow}>
+                    <Text style={styles.label}>Peso por caja:</Text>
+                    <Text style={styles.value}>{product.peso_caja} kg</Text>
+                  </View>
+                )}
+                {product.volumen_caja && (
+                  <View style={styles.infoRow}>
+                    <Text style={styles.label}>Volumen por caja:</Text>
+                    <Text style={styles.value}>{product.volumen_caja} m³</Text>
+                  </View>
+                )}
               </View>
+            </View>
+          </View>
+
+          {/* Sección de precios */}
+          <View style={styles.priceSection}>
+            <Text style={styles.priceTitle}>Precios y descuentos</Text>
+            <View style={styles.priceRow}>
+              <Text style={styles.priceLabel}>Tarifa base</Text>
+              <Text style={styles.basePrice}>{(product.precio_tarifa ?? 0).toFixed(2)}€</Text>
+            </View>
+
+            {/* Descuentos aplicados */}
+            <View style={[styles.priceRow, { backgroundColor: '#F3E8FF', padding: 10, borderRadius: 4, marginVertical: 10 }]}>
+              <View>
+                <Text style={[styles.priceLabel, { marginBottom: 5 }]}>Descuentos aplicados</Text>
+                <View style={{ flexDirection: 'row', gap: 20 }}>
+                  <View>
+                    <Text style={styles.discountLabel}>Base</Text>
+                    <Text style={styles.discountValue}>{(product.descuento_1 ?? 0).toFixed(1)}%</Text>
+                  </View>
+                  <View>
+                    <Text style={styles.discountLabel}>{clientType === 'custab' ? 'Custab' : 'Partner'}</Text>
+                    <Text style={styles.discountValue}>
+                      {(clientType === 'custab' ? (product.descuento_custab ?? 0) : (product.descuento_partner ?? 0)).toFixed(1)}%
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            </View>
+
+            {/* Precios finales */}
+            <View style={styles.priceRow}>
+              <Text style={styles.priceLabel}>Precio por unidad</Text>
+              <Text style={styles.regularPrice}>
+                {(clientType === 'custab' 
+                  ? (product.precio_unidad_custab ?? 0)
+                  : (product.precio_unidad_partner ?? 0)
+                ).toFixed(3)}€
+              </Text>
+            </View>
+            <View style={styles.priceRow}>
+              <Text style={styles.priceLabel}>Precio neto</Text>
+              <Text style={styles.regularPrice}>{regularPrice.toFixed(2)}€</Text>
+            </View>
+            <View style={styles.priceRow}>
+              <Text style={styles.priceLabel}>Precio neto con promo</Text>
+              <Text style={styles.promoPrice}>{price.toFixed(2)}€</Text>
+            </View>
+            <View style={styles.priceRow}>
+              <Text style={styles.priceLabel}>Ahorro total</Text>
+              <Text style={[styles.promoPrice, { color: '#059669' }]}>
+                {(((product.precio_tarifa ?? 0) - (price ?? 0)) / (product.precio_tarifa ?? 1) * 100).toFixed(1)}%
+              </Text>
             </View>
           </View>
 
@@ -198,23 +301,6 @@ export const ProductPromoPDF = ({ product, clientType }: ProductPromoPDFProps) =
             {product.promocion_familia && (
               <Text style={styles.promoText}>{product.promocion_familia}</Text>
             )}
-          </View>
-
-          {/* Sección de precios */}
-          <View style={styles.priceSection}>
-            <Text style={styles.priceTitle}>Precios</Text>
-            <View style={styles.priceRow}>
-              <Text style={styles.priceLabel}>Tarifa base</Text>
-              <Text style={styles.basePrice}>{(regularPrice * 1.25).toFixed(2)}€</Text>
-            </View>
-            <View style={styles.priceRow}>
-              <Text style={styles.priceLabel}>Precio neto</Text>
-              <Text style={styles.regularPrice}>{regularPrice.toFixed(2)}€</Text>
-            </View>
-            <View style={styles.priceRow}>
-              <Text style={styles.priceLabel}>Precio promo</Text>
-              <Text style={styles.promoPrice}>{price.toFixed(2)}€</Text>
-            </View>
           </View>
         </View>
       </Page>
