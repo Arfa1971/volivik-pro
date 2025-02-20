@@ -31,6 +31,7 @@ export interface ProductWithPricing {
   // Categorización
   familia_producto: string;
   categoria: string;
+  catalogo: string;
   
   // Metadatos
   created_at: string;

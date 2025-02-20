@@ -26,9 +26,10 @@ interface ProductListProps {
   products: Product[];
   loading?: boolean;
   error?: string;
+  onCategoryChange: (category: string) => void;
 }
 
-export function ProductList({ products, loading = false, error }: ProductListProps) {
+export function ProductList({ products, loading = false, error, onCategoryChange }: ProductListProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterValue, setFilterValue] = useState<string>('all');
   const [clientType, setClientType] = useState<'custab' | 'partner'>('custab');
@@ -112,7 +113,12 @@ export function ProductList({ products, loading = false, error }: ProductListPro
           </div>
 
           {/* Filtro Combinado */}
-          <Select value={filterValue} onValueChange={setFilterValue}>
+          <Select 
+            value={filterValue} 
+            onValueChange={(value) => {
+              setFilterValue(value);
+              onCategoryChange(value);
+            }}>
             <SelectTrigger className="w-[250px] border-orange-200 hover:border-orange-400 transition-colors">
               <SelectValue placeholder="Filtrar productos..." />
             </SelectTrigger>

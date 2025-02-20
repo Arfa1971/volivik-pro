@@ -4,6 +4,7 @@ import { CartProvider } from '@/context/CartContext';
 import { Toaster } from 'sonner';
 import { Product } from '@/types/product';
 import Cart from '@/features/cart/Cart';
+import { productService } from '@/services/productService';
 import '@/lib/pdf';
 
 function App() {
@@ -14,46 +15,35 @@ function App() {
 
   console.log('Current state:', { loading, error, productsCount: products.length });
 
-  useEffect(() => {
-    console.log('App useEffect triggered...');
-    const fetchProducts = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        console.log('Fetching products...');
-
-        const apiUrl = import.meta.env.VITE_API_URL;
-        console.log('Using API URL:', apiUrl);
-        const response = await fetch(`${apiUrl}/products`);
-        if (!response.ok) {
-          throw new Error(`Error al cargar los productos: ${response.status} ${response.statusText}`);
-        }
-
-        const data = await response.json();
-        console.log('API Response status:', response.status);
-        console.log('API Response headers:', Object.fromEntries(response.headers.entries()));
-        console.log('API Response data:', JSON.stringify(data, null, 2));
-        
-        if (!Array.isArray(data)) {
-          throw new Error('La respuesta de la API no es un array');
-        }
-        
-        if (data.length === 0) {
-          throw new Error('No se encontraron productos');
-        }
-
-        console.log('First product example:', data[0]);
-        console.log('Total products loaded:', data.length);
-        
-        setProducts(data);
-        setLoading(false);
-      } catch (err) {
-        console.error('Error fetching products:', err);
-        setError(err instanceof Error ? err.message : 'Error al cargar los productos');
-        setLoading(false);
+  const fetchProducts = async (category?: string) => {
+    try {
+      setLoading(true);
+      setError(null);
+      console.log('Fetching products...', category ? `for category: ${category}` : 'all');
+      
+      const data = category 
+        ? await productService.getProductsByCategory(category)
+        : await productService.getAllProducts();
+      
+      if (!Array.isArray(data)) {
+        throw new Error('La respuesta de la API no es un array');
       }
-    };
+      
+      if (data.length === 0) {
+        console.log('No se encontraron productos');
+      }
 
+      console.log('Total products loaded:', data.length);
+      setProducts(data);
+    } catch (err) {
+      console.error('Error fetching products:', err);
+      setError(err instanceof Error ? err.message : 'Error al cargar los productos');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchProducts();
   }, []);
 
@@ -77,7 +67,17 @@ function App() {
           {error ? (
             <div className="text-red-600">{error}</div>
           ) : (
-            <ProductList products={products} loading={loading} />
+            <ProductList 
+              products={products} 
+              loading={loading} 
+              onCategoryChange={(category) => {
+                if (category === 'all') {
+                  fetchProducts();
+                } else if (category !== 'promotion') {
+                  fetchProducts(category);
+                }
+              }} 
+            />
           )}
         </main>
         <Toaster position="top-right" />
